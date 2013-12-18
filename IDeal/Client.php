@@ -6,6 +6,8 @@ use Buzz\Browser;
 use Buzz\Client\Curl;
 use Wrep\IDealBundle\Exception\IDealException;
 use Wrep\IDealBundle\IDeal\Request\DirectoryRequest;
+use Wrep\IDealBundle\IDeal\Request\BaseRequest;
+use Wrep\IDealBundle\IDeal\Response\Response;
 
 class Client
 {
@@ -49,7 +51,8 @@ class Client
 	 */
 	public function fetchIssuerList()
 	{
-		$request = new DirectoryRequest($this->merchant);
+		$request = new DirectoryRequest($this->merchant, $this->acquirer);
+
 		$response = $this->sendRequest($request);
 
 		// TODO: DirectoryResponse maken waar je overheen kunt loopen etc
@@ -98,15 +101,17 @@ class Client
 	/**
 	 * Send a Request to the Acquirer, parse the reponse and return a Response
 	 *
-	 * @param Request the request to send
+	 * @param BaseRequest the request to send
 	 *
 	 * @return Response the response
 	 *
 	 * @throws IDealException if something went wrong
 	 */
-	protected function sendRequest(Request $request)
+	protected function sendRequest(BaseRequest $request)
 	{
-		$rawResponse = $this->browser->post($this->acquirerUrl,
+        echo $request->getContent();
+
+		$rawResponse = $this->browser->post($this->acquirer->getUrl(),
 											$request->getHeaders(),
 											$request->getContent() );
 
@@ -115,8 +120,10 @@ class Client
 			throw new IDealException( 'The iDeal acquirer responded with HTTP statuscode #' . $rawResponse->getStatusCode() . ' - ' . $rawResponse->getReasonPhrase() );
 		}
 
+        echo $rawResponse->getContent();
+
 		// Check if the acquirer responded with an error
-		$response = new Response($rawResponse->getContent(), $this->acquirerCertificate);
+		$response = new Response($rawResponse->getContent(), $this->acquirer);
 
 		if ($response->getType() == Response::TYPE_ERROR) {
 			throw new IDealException( 'The iDeal acquirer responded with an error response #' . $response->getXml()->Error->errorCode . ' - ' . $response->getXml()->Error->errorMessage . ' (' . $response->getXml()->Error->errorDetail . ')' );

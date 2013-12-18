@@ -3,6 +3,7 @@
 namespace Wrep\IDealBundle\IDeal\Request;
 
 use Wrep\IDealBundle\IDeal\Merchant;
+use Wrep\IDealBundle\IDeal\Acquirer;
 use Wrep\IDealBundle\IDeal\BIC;
 use Wrep\IDealBundle\IDeal\Transaction;
 
@@ -17,10 +18,12 @@ abstract class BaseRequest
 	private $requestType;
 	private $bic;
 	private $merchant;
-	private $transaction;
 	private $returnUrl;
+    private $acquirer;
 
-	/**
+    protected $transaction;
+
+    /**
 	 * Construct an Request
 	 *
 	 * @param string The type of request to create, for example DirectoryReq
@@ -68,7 +71,7 @@ abstract class BaseRequest
 	protected function setReturnUrl($returnUrl)
 	{
 		// Validate the merchant return URL
-		if (!is_string($returnUrl) || strlen($returnURL) > 512) {
+		if (!is_string($returnUrl) || strlen($returnUrl) > 512) {
 			throw new InvalidArgumentException('The merchant return URL must be a string of 512 characters or less. (' . $returnURL . ')');
 		}
 
@@ -94,7 +97,7 @@ abstract class BaseRequest
 		$xml->addAttribute('version', '3.3.1');
 
 		// Add the creation timestamp
-		$this->addCreateDateTimestamp();
+		$this->addCreateDateTimestamp($xml);
 
 		// Add other elements
 		if ($this->bic) {
@@ -115,9 +118,11 @@ abstract class BaseRequest
 	/**
 	 * Adds the createDateTimestamp element to the XML containing the current time as ISO8601 string in UTC timezone
 	 *
+     * @param SimpleXMLElement $xml
+     *
 	 * @return \SimpleXMLElement The added createDateTimestamp element
 	 */
-	protected function addCreateDateTimestamp()
+	protected function addCreateDateTimestamp(\SimpleXMLElement $xml)
 	{
 		// Create the UTC ISO8601 timestamp (iDeal style)
 		$utcTime = new \DateTime('now');
@@ -125,7 +130,7 @@ abstract class BaseRequest
 		$utcTime->setTimezone($utcTimezone);
 		$timestamp = $utcTime->format('Y-m-d\TH:i:s.000\Z');
 
-		return $this->xml->addChild('createDateTimestamp', $timestamp);
+		return $xml->addChild('createDateTimestamp', $timestamp);
 	}
 
 	protected function addIssuerElement(\SimpleXMLElement $xml)
@@ -147,7 +152,7 @@ abstract class BaseRequest
 		$merchantXml->addChild('merchantID', sprintf('%09d', $this->merchant->getId()) );
 		$merchantXml->addChild('subID', $this->merchant->getSubId() );
 
-		if (null != $returnURL) {
+		if (null != $this->returnUrl) {
 			$merchantXml->addChild('merchantReturnURL', $this->returnUrl);
 		}
 
@@ -173,16 +178,16 @@ abstract class BaseRequest
 	 *
 	 * @return \SimpleXMLElement A signed version of this message
 	 */
-	protected function signXml()
+	protected function signXml(\SimpleXMLElement $messageXml)
 	{
 		// Convert SimpleXMLElement to DOMElement for signing
 		$xml = new \DOMDocument();
-		$xml->loadXML( $this->xml->asXml() );
+		$xml->loadXML( $messageXml->asXml() );
 
 		// Decode the private key so we can use it to sign the request
 		$privateKey = new \XMLSecurityKey(\XMLSecurityKey::RSA_SHA256, array('type' => 'private'));
-		$privateKey->passphrase = $this->merchantCertificatePassphrase;
-		$privateKey->loadKey($this->merchantCertificate, true);
+		$privateKey->passphrase = $this->merchant->getCertificatePassphrase();
+		$privateKey->loadKey($this->merchant->getCertificate(), true);
 
 		// Create and configure the DSig helper and calculate the signature
 		$xmlDSigHelper = new \XMLSecurityDSig();
@@ -194,7 +199,7 @@ abstract class BaseRequest
 		$signature = $xmlDSigHelper->appendSignature($xml->documentElement);
 
 		// Calculate the fingerprint of the certificate
-		$thumbprint = \XMLSecurityKey::getRawThumbprint( file_get_contents($this->merchantCertificate) );
+		$thumbprint = \XMLSecurityKey::getRawThumbprint( file_get_contents($this->merchant->getCertificate()) );
 
 		// Append the KeyInfo and KeyName elements to the signature
 		$keyInfo = $signature->ownerDocument->createElementNS(\XMLSecurityDSig::XMLDSIGNS, 'KeyInfo');

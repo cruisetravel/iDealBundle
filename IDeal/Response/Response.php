@@ -1,6 +1,6 @@
 <?php
 
-namespace Wrep\IDealBundle\IDeal;
+namespace Wrep\IDealBundle\IDeal\Response;
 
 use Wrep\IDealBundle\IDeal\Acquirer;
 use Wrep\IDealBundle\Exception\IDealException;
@@ -54,7 +54,7 @@ class Response
 
 			// Get the acquirer public key
 			$publicKey = new \XMLSecurityKey(\XMLSecurityKey::RSA_SHA256, array('type' => 'public'));
-			$publicKey->loadKey($acquirerCertificate, true);
+			$publicKey->loadKey($acquirer->getCertificate(), true);
 
 			// Create and configure the DSig helper and get the signature
 			$xmlDSigHelper = new \XMLSecurityDSig();

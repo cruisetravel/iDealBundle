@@ -4,6 +4,7 @@ namespace Wrep\IDealBundle\IDeal\Request;
 
 use Wrep\IDealBundle\IDeal\Merchant;
 use Wrep\IDealBundle\IDeal\Transaction;
+use Wrep\IDealBundle\IDeal\Request\BaseRequest;
 
 class StatusRequest extends BaseRequest
 {
