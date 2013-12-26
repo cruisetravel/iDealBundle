@@ -198,8 +198,8 @@ abstract class BaseRequest
 		// Append the signature to the XML and save it for modification
 		$signature = $xmlDSigHelper->appendSignature($xml->documentElement);
 
-		// Calculate the fingerprint of the certificate
-		$thumbprint = \XMLSecurityKey::getRawThumbprint( file_get_contents($this->merchant->getCertificate()) );
+        // Calculate the fingerprint of the certificate
+		$thumbprint = \XMLSecurityKey::getRawThumbprint( file_get_contents($this->merchant->getPubCertificatePath()) );
 
 		// Append the KeyInfo and KeyName elements to the signature
 		$keyInfo = $signature->ownerDocument->createElementNS(\XMLSecurityDSig::XMLDSIGNS, 'KeyInfo');

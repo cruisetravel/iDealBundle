@@ -3,7 +3,6 @@
 namespace Wrep\IDealBundle\IDeal;
 
 use Wrep\IDealBundle\Exception\InvalidArgumentException;
-
 use Wrep\IDealBundle\IDeal\TransactionState\TransactionState;
 use Wrep\IDealBundle\IDeal\TransactionState\TransactionStateNew;
 
@@ -16,6 +15,9 @@ class Transaction
 	private $entranceCode;
 	private $language;
 	private $currency;
+
+    private $state;
+    private $transactionId;
 
 	public function __construct($purchaseId, $amount, $description, \DateInterval $expirationPeriod = null, $entranceCode = null, TransactionState $initialState = null)
 	{
@@ -84,16 +86,18 @@ class Transaction
 
 	protected function setExpirationPeriod(\DateInterval $expirationPeriod = null)
 	{
-		if ($expirationPeriod != null)
+		if ($expirationPeriod == null)
 		{
-			$dateTime = new \DateTime();
-			$timestamp = $dateTime->getTimestamp();
-			$intervalInSeconds = $dateTime->add($expirationPeriod)->getTimestamp() - $timestamp;
+            $expirationPeriod = new \DateInterval('PT15M');
+        }
 
-			if ($intervalInSeconds < 60 || $intervalInSeconds > 3600) {
-				throw new InvalidArgumentException('Expiration period must be at least 1 minute and not more then 1 hour, 15 minutes is advised. (' . $intervalInSeconds . ' seconds)');
-			}
-		}
+        $dateTime = new \DateTime();
+        $timestamp = $dateTime->getTimestamp();
+        $intervalInSeconds = $dateTime->add($expirationPeriod)->getTimestamp() - $timestamp;
+
+        if ($intervalInSeconds < 60 || $intervalInSeconds > 3600) {
+            throw new InvalidArgumentException('Expiration period must be at least 1 minute and not more then 1 hour, 15 minutes is advised. (' . $intervalInSeconds . ' seconds)');
+        }
 
 		$this->expirationPeriod = $expirationPeriod;
 	}
@@ -105,7 +109,11 @@ class Transaction
 
 	protected function setEntranceCode($entranceCode = null)
 	{
-		if ($entranceCode != null && !preg_match('/^([0-9a-z]){1,40}$/i', $entranceCode)) {
+        if (null === $entranceCode) {
+            // create one
+            $entranceCode = hash('sha1', serialize($this).time());
+        }
+		if ($entranceCode != null && !preg_match('/^([0-9a-z]){40}$/i', $entranceCode)) {
 			throw new InvalidArgumentException('Entrance code must be 40 characters and only letters/numbers. (' . $entranceCode . ')');
 		}
 
@@ -134,6 +142,15 @@ class Transaction
 		$this->currency = $currency;
 	}
 
+    public function getTransactionId()
+    {
+        return $this->transactionId;
+    }
+
+    public function setTransactionId($transactionId)
+    {
+        $this->transactionId = $transactionId;
+    }
 	/*** State stuff starts here ***/
 	public function getState()
 	{
@@ -150,11 +167,6 @@ class Transaction
 		return $this->getState()->getTimestamp();
 	}
 
-	public function getTransactionId()
-	{
-		return $this->getState()->getTransactionId();
-	}
-
 	public function getConsumer()
 	{
 		return $this->getState()->getConsumer();
@@ -162,26 +174,26 @@ class Transaction
 
 	public function setOpen(\DateTime $statusDateTimeStamp, $transactionId)
 	{
-		$this->status = $this->getState()->setOpen($statusDateTimeStamp, $transactionId);
+		$this->getState()->setOpen($statusDateTimeStamp, $transactionId);
 	}
 
 	public function setSuccess(\DateTime $statusDateTimeStamp, Consumer $consumer = null)
 	{
-		$this->status = $this->getState()->setSuccess($statusDateTimeStamp, $consumer);
+		$this->getState()->setSuccess($statusDateTimeStamp, $consumer);
 	}
 
 	public function setCancelled(\DateTime $statusDateTimeStamp)
 	{
-		$this->status = $this->getState()->setCancelled($statusDateTimeStamp);
+		$this->getState()->setCancelled($statusDateTimeStamp);
 	}
 
 	public function setExpired(\DateTime $statusDateTimeStamp)
 	{
-		$this->status = $this->getState()->setExpired($statusDateTimeStamp);
+		$this->getState()->setExpired($statusDateTimeStamp);
 	}
 
 	public function setFailed(\DateTime $statusDateTimeStamp)
 	{
-		$this->status = $this->getState()->setFailed($statusDateTimeStamp);
+		$this->getState()->setFailed($statusDateTimeStamp);
 	}
 }

@@ -10,12 +10,14 @@ class Merchant
 	private $subId;
 	private $certificatePath;
 	private $certificatePassphrase;
+    private $pubCertificatePath;
 
-	public function __construct($id, $subId, $certificatePath, $certificatePassphrase = null)
+	public function __construct($id, $subId, $certificatePath, $certificatePassphrase = null, $pubCertificatePath)
 	{
 		$this->setId($id);
 		$this->setSubId($subId);
 		$this->setCertificate($certificatePath, $certificatePassphrase);
+        $this->setPubCertificatePath($pubCertificatePath);
 	}
 
 	public function getId()
@@ -74,4 +76,17 @@ class Merchant
 		$this->certificatePath = $path;
 		$this->certificatePassphrase = $passphrase;
 	}
+
+    protected function setPubCertificatePath($pubCertificatePath) {
+        // Check if the merchant certificate exists
+        if ( !is_file($pubCertificatePath) ) {
+            throw new InvalidArgumentException('The merchant public certificate doesn\'t exists. (' . $pubCertificatePath . ')');
+        }
+
+        $this->pubCertificatePath = $pubCertificatePath;
+    }
+
+    public function getPubCertificatePath() {
+        return $this->pubCertificatePath;
+    }
 }

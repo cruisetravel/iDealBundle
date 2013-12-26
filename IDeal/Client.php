@@ -6,6 +6,8 @@ use Buzz\Browser;
 use Buzz\Client\Curl;
 use Wrep\IDealBundle\Exception\IDealException;
 use Wrep\IDealBundle\IDeal\Request\DirectoryRequest;
+use Wrep\IDealBundle\IDeal\Request\TransactionRequest;
+use Wrep\IDealBundle\IDeal\Request\StatusRequest;
 use Wrep\IDealBundle\IDeal\Request\BaseRequest;
 use Wrep\IDealBundle\IDeal\Response\Response;
 
@@ -59,9 +61,9 @@ class Client
 		$issuers = array();
 		foreach ($response->getXML()->Directory->Country as $country)
 		{
-			foreach ($country->Issuer as $issuer)
+            foreach ($country->Issuer as $issuer)
 			{
-				$issuers[] = new Issuer((string)$issuer->issuerID, (string)$issuer->issuerName, (string)$country->countryNames);
+            	$issuers[] = new Issuer(new BIC((string)$issuer->issuerID), (string)$issuer->issuerName, (string)$country->countryNames);
 			}
 		}
 
@@ -73,10 +75,7 @@ class Client
 	{
 		// TODO: Check of de transactie niet al gestart is
 
-		$request = new Request(Request::TYPE_TRANSACTION, $this->merchantCertificate, $this->merchantCertificatePassphrase);
-		$request->addIssuer($issuer);
-		$request->addMerchant($this->merchantId, $this->merchantSubId, $returnUrl);
-		$request->addTransaction($transaction);
+		$request = new TransactionRequest($this->merchant, $transaction, $issuer, $returnUrl);
 
 		$response = $this->sendRequest($request);
 
@@ -109,9 +108,7 @@ class Client
 	 */
 	protected function sendRequest(BaseRequest $request)
 	{
-        echo $request->getContent();
-
-		$rawResponse = $this->browser->post($this->acquirer->getUrl(),
+        $rawResponse = $this->browser->post($this->acquirer->getUrl(),
 											$request->getHeaders(),
 											$request->getContent() );
 
@@ -120,9 +117,7 @@ class Client
 			throw new IDealException( 'The iDeal acquirer responded with HTTP statuscode #' . $rawResponse->getStatusCode() . ' - ' . $rawResponse->getReasonPhrase() );
 		}
 
-        echo $rawResponse->getContent();
-
-		// Check if the acquirer responded with an error
+        // Check if the acquirer responded with an error
 		$response = new Response($rawResponse->getContent(), $this->acquirer);
 
 		if ($response->getType() == Response::TYPE_ERROR) {
