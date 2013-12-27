@@ -3,7 +3,7 @@
 namespace Wrep\IDealBundle\IDeal;
 
 use Wrep\IDealBundle\Exception\InvalidArgumentException;
-use Wrep\IDealBundle\IDeal\TransactionState\TransactionState;
+    use Wrep\IDealBundle\IDeal\TransactionState\TransactionState;
 use Wrep\IDealBundle\IDeal\TransactionState\TransactionStateNew;
 
 class Transaction
@@ -19,12 +19,21 @@ class Transaction
     private $state;
     private $transactionId;
 
-	public function __construct($purchaseId, $amount, $description, \DateInterval $expirationPeriod = null, $entranceCode = null, TransactionState $initialState = null)
+	public function __construct($purchaseId = null, $amount = null, $description = null, \DateInterval $expirationPeriod = null, $entranceCode = null, TransactionState $initialState = null)
 	{
-		$this->setPurchaseId($purchaseId);
-		$this->setAmount($amount);
-		$this->setDescription($description);
-		$this->setExpirationPeriod($expirationPeriod);
+        if (isset($purchaseId)) {
+            $this->setPurchaseId($purchaseId);
+        }
+
+        if (isset($amount)) {
+            $this->setAmount($amount);
+        }
+
+        if (isset($description)) {
+            $this->setDescription($description);
+        }
+
+        $this->setExpirationPeriod($expirationPeriod);
 		$this->setEntranceCode($entranceCode);
 
 		if (null == $initialState) {
@@ -157,7 +166,7 @@ class Transaction
 		return $this->state;
 	}
 
-	private function setState(TransactionState $state)
+	public function setState(TransactionState $state)
 	{
 		$this->state = $state;
 	}
