@@ -2,6 +2,8 @@
 
 namespace Wrep\IDealBundle\IDeal\TransactionState;
 
+use Wrep\IDealBundle\IDeal\Consumer;
+
 class TransactionStateSuccess extends TransactionStateFinal
 {
 	private $consumer;

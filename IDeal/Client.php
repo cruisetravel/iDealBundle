@@ -10,6 +10,7 @@ use Wrep\IDealBundle\IDeal\Request\TransactionRequest;
 use Wrep\IDealBundle\IDeal\Request\StatusRequest;
 use Wrep\IDealBundle\IDeal\Request\BaseRequest;
 use Wrep\IDealBundle\IDeal\Response\Response;
+use Wrep\IDealBundle\IDeal\Consumer;
 
 class Client
 {
@@ -79,7 +80,7 @@ class Client
 
 		$response = $this->sendRequest($request);
 
-		$transaction->setTransactionId((string)$response->getXml()->Transaction->transactionID);
+        $transaction->setTransactionId((string)$response->getXml()->Transaction->transactionID);
 		return (string)$response->getXml()->Issuer->issuerAuthenticationURL;
 	}
 
@@ -87,13 +88,20 @@ class Client
 	public function updateStatus(Transaction $transaction)
 	{
 		// TODO: Check of de transactie wel een ID heeft
-		$request = new Request(Request::TYPE_STATUS, $this->merchantCertificate, $this->merchantCertificatePassphrase);
-		$request->addMerchant($this->merchantId, $this->merchantSubId);
-		$request->addTransaction($transaction);
+		$request = new StatusRequest($this->merchant, $transaction);
 
-		$response = $this->sendRequest($request);
+        $response = $this->sendRequest($request);
 
-		$transaction->setStatus( (string)$response->getXml()->Transaction->status );
+        $consumer = new Consumer((string)$response->getXml()->Transaction->consumerName, (string)$response->getXml()->Transaction->consumerIBAN, new Bic((string)$response->getXml()->Transaction->consumerBIC));
+        $timestamp = new \DateTime((string)$response->getXml()->createDateTimestamp);
+
+        // directly setting the transaction state as for instance the transaction's setSuccess() method validates based on previous state
+        // when checking for a status based on transaction id the current state is not always known
+        $transactionState = '\Wrep\IDealBundle\IDeal\TransactionState\TransactionState' . (string)$response->getXml()->Transaction->status;
+
+		$transaction->setState(new $transactionState($timestamp, $consumer));
+
+        return $transaction;
 		// TODO: Andere data ook in de transactie setten
 	}
 
