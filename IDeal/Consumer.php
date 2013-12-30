@@ -10,11 +10,17 @@ class Consumer
 	private $bic;
 	private $iban;
 
-	public function __construct($name, $iban, BIC $bic = null)
+	public function __construct($name = null, $iban = null, BIC $bic = null)
 	{
+            if (isset($name)) {
 		$this->setName($name);
-		$this->setBIC($bic);
-		$this->setIban($iban);
+            }
+
+            $this->setBIC($bic);
+
+            if (isset($iban)) {
+                $this->setIban($iban);
+            }
 	}
 
 	public function getName()
