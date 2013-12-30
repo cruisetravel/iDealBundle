@@ -6,36 +6,42 @@ use Wrep\IDealBundle\Exception\InvalidArgumentException;
 
 class Issuer
 {
-	private $bic;
-	private $name;
 
-	public function __construct(BIC $bic, $name)
-	{
-		$this->setBIC($bic);
-		$this->setName($name);
-	}
+    protected $bic;
+    protected $name;
 
-	public function getBIC()
-	{
-		return $this->bic;
-	}
+    public function __construct(BIC $bic = null, $name = null)
+    {
+        if (isset($bic)) {
+            $this->setBic($bic);
+        }
+        if (isset($name)) {
+            $this->setName($name);
+        }
+    }
 
-	protected function setBIC(BIC $bic)
-	{
-		$this->bic = $bic;
-	}
+    public function getBIC()
+    {
+        return $this->bic;
+    }
 
-	public function getName()
-	{
-		return $this->name;
-	}
+    public function setBic(BIC $bic)
+    {
+        $this->bic = $bic;
+    }
 
-	protected function setName($name)
-	{
-		if ( !is_string($name) || strlen($name) == 0 ) {
-			throw new InvalidArgumentException('Name must be a non-empty string. (' . $name . ')');
-		}
+    public function getName()
+    {
+        return $this->name;
+    }
 
-		$this->name = $name;
-	}
+    public function setName($name)
+    {
+        if (!is_string($name) || strlen($name) == 0) {
+            throw new InvalidArgumentException('Name must be a non-empty string. (' . $name . ')');
+        }
+
+        $this->name = $name;
+    }
+
 }

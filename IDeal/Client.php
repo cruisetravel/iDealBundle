@@ -93,7 +93,7 @@ class Client
 
         // only status 'success' returns consumer details
         if ($response->getXml()->Transaction->consumerName) {
-            $consumer = new Consumer((string) $response->getXml()->Transaction->consumerName, (string) $response->getXml()->Transaction->consumerIBAN, new Bic((string) $response->getXml()->Transaction->consumerBIC));
+            $consumer = new Consumer((string) $response->getXml()->Transaction->consumerName, (string) $response->getXml()->Transaction->consumerIBAN, new BIC((string) $response->getXml()->Transaction->consumerBIC));
         } else {
             $consumer = new Consumer();
         }
