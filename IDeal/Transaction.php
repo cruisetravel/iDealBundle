@@ -9,15 +9,15 @@ use Wrep\IDealBundle\IDeal\TransactionState\TransactionStateNew;
 class Transaction
 {
 
-    private $purchaseId;
-    private $amount;
-    private $description;
-    private $expirationPeriod;
-    private $entranceCode;
-    private $language;
-    private $currency;
-    private $state;
-    private $transactionId;
+    protected $purchaseId;
+    protected $amount;
+    protected $description;
+    protected $expirationPeriod;
+    protected $entranceCode;
+    protected $language;
+    protected $currency;
+    protected $state;
+    protected $transactionId;
 
     public function __construct($purchaseId = null, $amount = null, $description = null, \DateInterval $expirationPeriod = null, $entranceCode = null, TransactionState $initialState = null)
     {
